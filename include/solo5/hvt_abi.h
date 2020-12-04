@@ -72,11 +72,17 @@ static inline void hvt_do_hypercall(int n, volatile void *arg)
 #    ifdef assert
     assert(((uint64_t)arg <= UINT32_MAX));
 #    endif
+#    ifdef __llir__
+    (void) n;
+    (void) arg;
+    __builtin_trap();
+#    else
     __asm__ __volatile__("outl %0, %1"
             :
             : "a" ((uint32_t)((uint64_t)arg)),
               "d" ((uint16_t)(HVT_HYPERCALL_PIO_BASE + n))
             : "memory");
+#    endif
 }
 #    endif
 

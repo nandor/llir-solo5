@@ -31,7 +31,11 @@ int solo5_app_main(const struct solo5_start_info *si __attribute__((unused)))
     puts("\n**** Solo5 standalone test_notls ****\n\n");
 
 #if defined(__x86_64__)
+  #if defined(__llir__)
+    __builtin_trap();
+  #else
     __asm__ __volatile("movq %%fs:0x28, %%rax" : : : "rax");
+  #endif
 #elif defined(__aarch64__)
     __asm__ __volatile("mrs x0, tpidr_el0; "
                        "add x0, x0, #0x10; "

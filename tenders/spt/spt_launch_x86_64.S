@@ -18,6 +18,22 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef __llir__
+  .section .text
+  .globl spt_launch
+spt_launch:
+  .args   i64, i64, i64
+  .call   c
+
+  arg.i64 $0, 0 # stack
+  arg.i64 $1, 1 # fn
+  arg.i64 $2, 2 # arg
+
+  set     $sp, $0
+  tcall.c $1, $2
+  .end
+#else
+
 #define ENTRY(x) .text; .globl x; .type x,%function; x:
 #define END(x)   .size x, . - x
 
@@ -29,3 +45,5 @@ ENTRY(spt_launch)
 
 	jmp *%rsi
 END(spt_launch)
+
+#endif

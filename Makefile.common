@@ -36,7 +36,7 @@ CPPFLAGS := -isystem $(TOPDIR)/include/crt -I$(TOPDIR)/include/solo5
 LD := $(MAKECONF_LD)
 LDFLAGS := -nostdlib -z max-page-size=$(CONFIG_GUEST_PAGE_SIZE) -static \
     $(MAKECONF_LDFLAGS)
-OBJCOPY := objcopy
+OBJCOPY ?= objcopy
 
 # Genode application compiling and linking is a special case
 GENODE_APP_CFLAGS := $(CFLAGS) -fPIC
@@ -68,7 +68,7 @@ HOSTCFLAGS := -Wall -Werror -std=c11 -fstack-protector-strong -O2 -g
 HOSTCPPFLAGS := -I$(TOPDIR)/include/solo5
 HOSTLDFLAGS :=
 HOSTLDLIBS :=
-HOSTAR := ar
+HOSTAR := $(MAKECONF_AR)
 
 define HOSTCOMPILE.c
 	@echo "HOSTCC $@"

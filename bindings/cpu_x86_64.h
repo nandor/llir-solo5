@@ -171,14 +171,21 @@ struct trap_regs {
 
 static inline uint64_t cpu_rdtsc(void)
 {
+#ifdef __llir__
+    return __rdtsc();
+#else
     unsigned long l, h;
 
     __asm__ __volatile__("rdtsc" : "=a"(l), "=d"(h));
     return ((uint64_t)h << 32) | l;
+#endif
 }
 
 static inline uint64_t mul64_32(uint64_t a, uint32_t b, uint8_t s)
 {
+#ifdef __llir__
+    return (a * b) >> s;
+#else
     uint64_t prod;
 
     __asm__ (
@@ -189,46 +196,84 @@ static inline uint64_t mul64_32(uint64_t a, uint32_t b, uint8_t s)
     );
 
     return prod;
+#endif
 }
 
 /* accessing devices via port space */
 
 static inline void outb(uint16_t port, uint8_t v)
 {
+#ifdef __llir__
+    (void) port;
+    (void) v;
+    __builtin_trap();
+#else
     __asm__ __volatile__("outb %0,%1" : : "a" (v), "dN" (port));
+#endif
 }
 static inline void outw(uint16_t port, uint16_t v)
 {
+#ifdef __llir__
+    (void) port;
+    (void) v;
+    __builtin_trap();
+#else
     __asm__ __volatile__("outw %0,%1" : : "a" (v), "dN" (port));
+#endif
 }
 static inline void outl(uint16_t port, uint32_t v)
 {
+#ifdef __llir__
+    (void) port;
+    (void) v;
+    __builtin_trap();
+#else
     __asm__ __volatile__("outl %0,%1" : : "a" (v), "dN" (port));
+#endif
 }
 static inline uint8_t inb(uint16_t port)
 {
+#ifdef __llir__
+    (void) port;
+    __builtin_trap();
+#else
     uint8_t v;
 
     __asm__ __volatile__("inb %1,%0" : "=a" (v) : "dN" (port));
     return v;
+#endif
 }
 static inline uint16_t inw(uint16_t port)
 {
+#ifdef __llir__
+    (void) port;
+    __builtin_trap();
+#else
     uint16_t v;
 
     __asm__ __volatile__("inw %1,%0" : "=a" (v) : "dN" (port));
     return v;
+#endif
 }
 static inline uint32_t inl(uint16_t port)
 {
+#ifdef __llir__
+    (void) port;
+    __builtin_trap();
+#else
     uint32_t v;
 
     __asm__ __volatile__("inl %1,%0" : "=a" (v) : "dN" (port));
     return v;
+#endif
 }
 
 static inline uint64_t inq(uint16_t port_lo)
 {
+#ifdef __llir__
+    (void) port_lo;
+    __builtin_trap();
+#else
     uint16_t port_hi = port_lo + 4;
     uint32_t lo, hi;
 
@@ -236,21 +281,35 @@ static inline uint64_t inq(uint16_t port_lo)
     __asm__ __volatile__("inl %1,%0" : "=a" (hi) : "dN" (port_hi));
 
     return ((uint64_t)lo) | ((uint64_t)hi << 32);
+#endif
 }
 
 static inline void cpu_set_tls_base(uint64_t base)
 {
+#ifdef __llir__
+    (void) base;
+    __builtin_trap();
+#else
      __asm__ __volatile("wrmsr" ::
          "c" (0xc0000100), /* IA32_FS_BASE */
          "a" ((uint32_t)(base)),
          "d" ((uint32_t)(base >> 32))
      );
+#endif
 }
 
 static inline void
 x86_cpuid(uint32_t level, uint32_t *eax_out, uint32_t *ebx_out,
         uint32_t *ecx_out, uint32_t *edx_out)
 {
+#ifdef __llir__
+    (void) level;
+    (void) eax_out;
+    (void) ebx_out;
+    (void) ecx_out;
+    (void) edx_out;
+    __builtin_trap();
+#else
     uint32_t eax_, ebx_, ecx_, edx_;
 
     __asm__(
@@ -262,6 +321,7 @@ x86_cpuid(uint32_t level, uint32_t *eax_out, uint32_t *ebx_out,
     *ebx_out = ebx_;
     *ecx_out = ecx_;
     *edx_out = edx_;
+#endif
 }
 
 #endif /* !ASM_FILE */

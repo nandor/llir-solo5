@@ -82,7 +82,11 @@ uint64_t pvclock_monotonic(void)
 
     do {
         version = pvclock_ti->version;
+#ifdef __llir__
+        __builtin_trap();
+#else
         __asm__ ("mfence" ::: "memory");
+#endif
         delta = cpu_rdtsc() - pvclock_ti->tsc_timestamp;
         if (pvclock_ti->tsc_shift < 0)
             delta >>= -pvclock_ti->tsc_shift;
@@ -90,7 +94,11 @@ uint64_t pvclock_monotonic(void)
             delta <<= pvclock_ti->tsc_shift;
         time_now = mul64_32(delta, pvclock_ti->tsc_to_system_mul, 32) +
             pvclock_ti->system_time;
+#ifdef __llir__
+        __builtin_trap();
+#else
         __asm__ ("mfence" ::: "memory");
+#endif
     } while ((pvclock_ti->version & 1) || (pvclock_ti->version != version));
 
     return time_now;
@@ -106,10 +114,18 @@ static uint64_t pvclock_read_wall_clock(void)
 
     do {
         version = pvclock_wc->version;
+#ifdef __llir__
+        __builtin_trap();
+#else
         __asm__ ("mfence" ::: "memory");
+#endif
         wc_boot = pvclock_wc->sec * NSEC_PER_SEC;
         wc_boot += pvclock_wc->nsec;
+#ifdef __llir__
+        __builtin_trap();
+#else
         __asm__ ("mfence" ::: "memory");
+#endif
     } while ((pvclock_wc->version & 1) || (pvclock_wc->version != version));
 
     return wc_boot;

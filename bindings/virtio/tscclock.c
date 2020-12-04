@@ -289,10 +289,14 @@ void cpu_block(uint64_t until) {
          * the hopes that we might get new work and can do something
          * else than spin.
          */
+#ifdef __llir__
+     __builtin_trap();
+#else
         __asm__ __volatile__(
             "sti;\n"
             "nop;\n"    /* ints are enabled 1 instr after sti */
             "cli;\n");
+#endif
         return;
     }
 
@@ -323,9 +327,13 @@ void cpu_block(uint64_t until) {
      */
      d = cpu_intr_depth;
      cpu_intr_depth = 0;
+#ifdef __llir__
+     __builtin_trap();
+#else
      __asm__ __volatile__(
          "sti;\n"
          "hlt;\n"
          "cli;\n");
+#endif
      cpu_intr_depth = d;
 }

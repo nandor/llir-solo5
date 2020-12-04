@@ -43,84 +43,128 @@
 long sys_read(long fd, void *buf, long size)
 {
     long ret;
-
+#ifdef __llir__
+    __asm__ __volatile__ (
+            "syscall.i64 %0, %1, %2, $3, %4"
+            : "=r" (ret)
+            : "r" (SYS_read), "r" (fd), "r" (buf), "r" (size)
+            : "memory"
+    );
+#else
     __asm__ __volatile__ (
             "syscall"
             : "=a" (ret)
             : "a" (SYS_read), "D" (fd), "S" (buf), "d" (size)
             : "rcx", "r11", "memory"
     );
-
+#endif
     return ret;
 }
 
 long sys_write(long fd, const void *buf, long size)
 {
     long ret;
-
+#ifdef __llir__
+    __asm__ __volatile__ (
+            "syscall.i64 %0, %1, %2, %3, %4"
+            : "=r" (ret)
+            : "r" (SYS_write), "r" (fd), "r" (buf), "r" (size)
+            : "memory"
+    );
+#else
     __asm__ __volatile__ (
             "syscall"
             : "=a" (ret)
             : "a" (SYS_write), "D" (fd), "S" (buf), "d" (size)
             : "rcx", "r11", "memory"
     );
-
+#endif
     return ret;
 }
 
 long sys_pread64(long fd, void *buf, long size, long pos)
 {
     long ret;
+#ifdef __llir__
+    __asm__ __volatile__ (
+            "syscall.i64 %0, %1, %2, %3, %4, %5"
+            : "=r" (ret)
+            : "r" (SYS_pread64), "r" (fd), "r" (buf), "r" (size), "r" (pos)
+            : "memory"
+    );
+#else
     register long r10 __asm__("r10") = pos;
-
     __asm__ __volatile__ (
             "syscall"
             : "=a" (ret)
             : "a" (SYS_pread64), "D" (fd), "S" (buf), "d" (size), "r" (r10)
             : "rcx", "r11", "memory"
     );
-
+#endif
     return ret;
 }
 
 long sys_pwrite64(long fd, const void *buf, long size, long pos)
 {
     long ret;
+#ifdef __llir__
+    __asm__ __volatile__ (
+            "syscall.i64 %0, %1, %2, %3, %4, %5"
+            : "=r" (ret)
+            : "r" (SYS_pwrite64), "r" (fd), "r" (buf), "r" (size), "r" (pos)
+            : "memory"
+    );
+#else
     register long r10 __asm__("r10") = pos;
-
     __asm__ __volatile__ (
             "syscall"
             : "=a" (ret)
             : "a" (SYS_pwrite64), "D" (fd), "S" (buf), "d" (size), "r" (r10)
             : "rcx", "r11", "memory"
     );
-
+#endif
     return ret;
 }
 
 void sys_exit_group(long status)
 {
+#ifdef __llir__
+    __asm__ __volatile__ (
+            "syscall %0, %1"
+            :
+            : "r" (SYS_exit_group), "r" (status)
+            : "memory"
+    );
+    __builtin_trap();
+#else
     __asm__ __volatile__ (
             "syscall"
             :
             : "a" (SYS_exit_group), "D" (status)
             : "rcx", "r11", "memory"
     );
-
     for(;;);
+#endif
 }
 
 long sys_clock_gettime(const long which, void *ts)
 {
     int ret;
-
+#ifdef __llir__
+    __asm__ __volatile__ (
+            "syscall.i64 %0, %1, %2, %3"
+            : "=r" (ret)
+            : "r" (SYS_clock_gettime), "r" (which), "r" (ts)
+            : "memory"
+    );
+#else
     __asm__ __volatile__ (
             "syscall"
             : "=a" (ret)
             : "a" (SYS_clock_gettime), "D" (which), "S" (ts)
             : "rcx", "r11", "memory"
     );
-
+#endif
     return ret;
 }
 
@@ -128,6 +172,15 @@ long sys_epoll_pwait(long epfd, void *events, long maxevents, long timeout,
         void *sigmask, long sigsetsize)
 {
     long ret;
+#ifdef __llir__
+    __asm__ __volatile__ (
+            "syscall.i64 %0, %1, %2, %3, %4, %5, %6, %7"
+            : "=r" (ret)
+            : "r" (SYS_epoll_pwait), "r" (epfd), "r" (events), "r" (maxevents),
+              "r" (timeout), "r" (sigmask), "r" (sigsetsize)
+            : "memory"
+    );
+#else
     register long r10 __asm__("r10") = timeout;
     register long r8 __asm__("r8") = (long)sigmask;
     register long r9 __asm__("r9") = sigsetsize;
@@ -139,15 +192,23 @@ long sys_epoll_pwait(long epfd, void *events, long maxevents, long timeout,
               "r" (r10), "r" (r8), "r" (r9)
             : "rcx", "r11", "memory"
     );
-
+#endif
     return ret;
 }
 
 long sys_timerfd_settime(long fd, long flags, const void *utmr, void *otmr)
 {
     long ret;
+#ifdef __llir__
+    __asm__ __volatile__ (
+            "syscall.i64 %0, %1, %2, %3, %4, %5"
+            : "=r" (ret)
+            : "r" (SYS_timerfd_settime), "r" (fd), "r" (flags), "r" (utmr),
+              "r" (otmr)
+            : "memory"
+    );
+#else
     register long r10 __asm__("r10") = (long)otmr;
-
     __asm__ __volatile__ (
             "syscall"
             : "=a" (ret)
@@ -155,20 +216,27 @@ long sys_timerfd_settime(long fd, long flags, const void *utmr, void *otmr)
               "r" (r10)
             : "rcx", "r11", "memory"
     );
-
+#endif
     return ret;
 }
 
 long sys_arch_prctl(long code, long addr)
 {
     long ret;
-
+#ifdef __llir__
+    __asm__ __volatile__ (
+            "syscall.i64 %0, %1, %2, %3"
+            : "=r" (ret)
+            : "r" (SYS_arch_prctl), "r" (code), "r" (addr)
+            : "memory"
+    );
+#else
     __asm__ __volatile__ (
             "syscall"
             : "=a" (ret)
             : "a" (SYS_arch_prctl), "D" (code), "S" (addr)
             : "rcx", "r11", "memory"
     );
-
+#endif
     return ret;
 }

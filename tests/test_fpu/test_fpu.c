@@ -38,14 +38,18 @@ int solo5_app_main(const struct solo5_start_info *si __attribute__((unused)))
     c[3] = 8.0;
 
 #if defined(__x86_64__)
-     __asm__ (
-         "movaps %0,%%xmm1;"
-         "mulps %%xmm1, %%xmm1;"
-         "movaps %%xmm1, %0"
-         : "=m" (c)
-         : "m" (c)
-         : "xmm1"
-    );
+    #if defined __llir__
+        __builtin_trap();
+    #else
+         __asm__ (
+             "movaps %0,%%xmm1;"
+             "mulps %%xmm1, %%xmm1;"
+             "movaps %%xmm1, %0"
+             : "=m" (c)
+             : "m" (c)
+             : "xmm1"
+        );
+    #endif
 #elif defined(__aarch64__)
     __asm__(
         "ldr q0, %0\n"

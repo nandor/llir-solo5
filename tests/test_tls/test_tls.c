@@ -21,6 +21,15 @@
 #include "solo5.h"
 #include "../../bindings/lib.c"
 
+#ifdef __llir__
+
+int solo5_app_main(const struct solo5_start_info *si __attribute__((unused)))
+{
+    return SOLO5_EXIT_FAILURE;
+}
+
+#else
+
 /*
  * XXX TODO: This test contains a bad, incomplete implementation of TLS.
  * It's unclear what we should be testing here, and what "TLS support" in
@@ -121,3 +130,5 @@ int solo5_app_main(const struct solo5_start_info *si __attribute__((unused)))
 }
 
 #endif /* defined(__FreeBSD__) || defined(__OpenBSD__) */
+
+#endif

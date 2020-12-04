@@ -32,6 +32,9 @@ static uint64_t cpu_gdt64[GDT_NUM_ENTRIES] ALIGN_64_BIT;
  */
 static void gdt_init(void)
 {
+#ifdef __llir__
+    __builtin_trap();
+#else
     memset(cpu_gdt64, 0, sizeof(cpu_gdt64));
     cpu_gdt64[GDT_DESC_CODE] = GDT_DESC_CODE_VAL;
     cpu_gdt64[GDT_DESC_DATA] = GDT_DESC_DATA_VAL;
@@ -54,6 +57,7 @@ static void gdt_init(void)
               "n" (GDT_DESC_OFFSET(GDT_DESC_CODE)),
               "n" (GDT_DESC_OFFSET(GDT_DESC_DATA))
             : "%rax");
+#endif
 }
 
 static struct idt_gate_desc cpu_idt[IDT_NUM_ENTRIES] ALIGN_64_BIT;
@@ -127,7 +131,11 @@ static void idt_init(void)
     volatile struct idtptr idtptr;
     idtptr.limit = sizeof(cpu_idt) - 1;
     idtptr.base = (uint64_t) &cpu_idt;
+#ifdef __llir__
+    __builtin_trap();
+#else
     __asm__ __volatile__("lidt (%0)" :: "r" (&idtptr));
+#endif
 }
 
 static struct tss cpu_tss;
@@ -186,20 +194,32 @@ int cpu_intr_depth = 1;
 
 void cpu_intr_disable(void)
 {
+#ifdef __llir__
+    __builtin_trap();
+#else
     __asm__ __volatile__("cli");
+#endif
     cpu_intr_depth++;
 }
 
 void cpu_intr_enable(void)
 {
+#ifdef __llir__
+    __builtin_trap();
+#else
     assert(cpu_intr_depth > 0);
 
     if (--cpu_intr_depth == 0)
         __asm__ __volatile__("sti");
+#endif
 }
 
 void cpu_halt(void)
 {
+#ifdef __llir__
+    __builtin_trap();
+#else
     __asm__ __volatile__("cli; hlt");
     for(;;);
+#endif
 }

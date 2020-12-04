@@ -29,6 +29,16 @@
 #include "multiboot.h"
 #include "../cpu_x86_64.h"
 
+#ifdef __llir__
+
+    .section .text
+    .globl _newstack
+_newstack:
+    trap
+    .end
+
+#else
+
 #define ENTRY(x) .text; .globl x; .type x,%function; x:
 #define END(x)   .size x, . - x
 
@@ -201,3 +211,5 @@ ENTRY(_newstack)
 	cli
 	hlt
 END(_newstack)
+
+#endif

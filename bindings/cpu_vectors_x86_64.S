@@ -18,6 +18,10 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef __llir__
+
+#else
+
 .macro PUSH_CALLER_SAVE
     pushq %rax
     pushq %rdi
@@ -120,3 +124,5 @@ IRQ_ENTRY 12
 IRQ_ENTRY 13
 IRQ_ENTRY 14
 IRQ_ENTRY 15
+
+#endif

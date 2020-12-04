@@ -21,6 +21,15 @@
 #include "solo5.h"
 #include "../../bindings/lib.c"
 
+#ifdef __llir__
+
+int solo5_app_main(const struct solo5_start_info *si __attribute__((unused)))
+{
+  return SOLO5_EXIT_FAILURE;
+}
+
+#else
+
 static void puts(const char *s)
 {
     solo5_console_write(s, strlen(s));
@@ -42,3 +51,5 @@ int solo5_app_main(const struct solo5_start_info *si __attribute__((unused)))
 
     return SOLO5_EXIT_FAILURE;
 }
+
+#endif

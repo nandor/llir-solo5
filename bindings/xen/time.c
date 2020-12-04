@@ -64,6 +64,9 @@ void solo5_yield(solo5_time_t deadline, solo5_handle_set_t *ready_set)
          * Further, order is important here; we must check that the timer
          * event has not fired immediately before going into halt state.
          */
+#ifdef __llir__
+        __builtin_trap();
+#else
         while(true) {
             __asm__ __volatile__ ("cli" : : : "memory");
             if (timer_fired) {
@@ -74,6 +77,7 @@ void solo5_yield(solo5_time_t deadline, solo5_handle_set_t *ready_set)
                 __asm__ __volatile__ ("sti; hlt");
             }
         }
+#endif
     }
     if (ready_set)
         *ready_set = 0;

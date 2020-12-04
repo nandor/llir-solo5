@@ -51,10 +51,72 @@
 #define __XEN_HYPERCALL_X86_64_H__
 
 /*
- * Hypercall primatives for 64bit
+ * Hypercall primitives for 64bit
  *
  * Inputs: %rdi, %rsi, %rdx, %r10, %r8, %r9 (arguments 1-6)
  */
+#ifdef __llir__
+
+#define _hypercall64_1(type, hcall, a1)                                 \
+    ({                                                                  \
+        extern const uint8_t HYPERCALL_PAGE[PAGE_SIZE];                 \
+        int64_t __res;                                                  \
+        __asm__ __volatile__ (                                          \
+            "call.i64.xen %0, %1, %2"                                   \
+            : "=r" (__res)                                              \
+            : "r" ((uintptr_t)HYPERCALL_PAGE + hcall * 32),             \
+              "r" ((long)(a1))                                          \
+            : "memory" );                                               \
+        (type)__res;                                                    \
+    })
+
+#define _hypercall64_2(type, hcall, a1, a2)                             \
+    ({                                                                  \
+        extern const uint8_t HYPERCALL_PAGE[PAGE_SIZE];                 \
+        int64_t __res;                                                  \
+        __asm__ __volatile__ (                                          \
+            "call.i64.xen %0, %1, %2, %3"                               \
+            : "=r" (__res)                                              \
+            : "r" ((uintptr_t)HYPERCALL_PAGE + hcall * 32),             \
+              "r" ((long)(a1)),                                         \
+              "r" ((long)(a2))                                          \
+            : "memory" );                                               \
+        (type)__res;                                                    \
+    })
+
+#define _hypercall64_3(type, hcall, a1, a2, a3)                         \
+    ({                                                                  \
+        extern const uint8_t HYPERCALL_PAGE[PAGE_SIZE];                 \
+        int64_t __res;                                                  \
+        __asm__ __volatile__ (                                          \
+            "call.i64.xen %0, %1, %2, %3, %4"                           \
+            : "=r" (__res)                                              \
+            : "r" ((uintptr_t)HYPERCALL_PAGE + hcall * 32),             \
+              "r" ((long)(a1)),                                         \
+              "r" ((long)(a2)),                                         \
+              "r" ((long)(a3))                                          \
+            : "memory" );                                               \
+        (type)__res;                                                    \
+    })
+
+#define _hypercall64_4(type, hcall, a1, a2, a3, a4)                     \
+    ({                                                                  \
+        extern const uint8_t HYPERCALL_PAGE[PAGE_SIZE];                 \
+        int64_t __res;                                                  \
+        __asm__ __volatile__ (                                          \
+            "call.i64.xen %0, %1, %2, %3, %4, %5"                       \
+            : "=r" (__res)                                              \
+            : "r" ((uintptr_t)HYPERCALL_PAGE + hcall * 32),             \
+              "r" ((long)(a1)),                                         \
+              "r" ((long)(a2)),                                         \
+              "r" ((long)(a3)),                                         \
+              "r" ((long)(a4))                                          \
+            : "memory" );                                               \
+        (type)__res;                                                    \
+    })
+
+
+#else
 
 #define _hypercall64_1(type, hcall, a1)                                 \
     ({                                                                  \
@@ -106,5 +168,7 @@
             : "memory" );                                               \
         (type)__res;                                                    \
     })
+
+#endif /* __llir__ */
 
 #endif /* __XEN_HYPERCALL_X86_64_H__ */

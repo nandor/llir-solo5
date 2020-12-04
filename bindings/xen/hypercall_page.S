@@ -47,6 +47,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef __llir__
+
+    .section .data
+    .globl HYPERCALL_PAGE
+HYPERCALL_PAGE:
+    .quad 0
+
+#else
 #include "../cpu_x86_64.h"
 #define __ASSEMBLY__
 #include "xen/xen.h"
@@ -132,3 +140,4 @@ DECLARE_HYPERCALL(arch_4)
 DECLARE_HYPERCALL(arch_5)
 DECLARE_HYPERCALL(arch_6)
 DECLARE_HYPERCALL(arch_7)
+#endif

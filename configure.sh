@@ -40,6 +40,11 @@ cc_is_clang()
     ${CC} -dM -E - </dev/null | grep -Eq '^#define __clang__ 1$'
 }
 
+cc_is_llir()
+{
+    ${CC} -dM -E - </dev/null | grep -Eq '^#define __llir__ 1$'
+}
+
 cc_has_pie()
 {
     ${CC} -dM -E - </dev/null | grep -Eq '^#define __PIE__ [1-9]$'
@@ -179,6 +184,45 @@ config_host_linux()
     [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_XEN=1
 }
 
+config_host_llir()
+{
+    # On FreeBSD/clang we use -nostdlibinc which gives us access to the
+    # clang-provided headers for compiler instrinsics. We copy the rest
+    # (std*.h, float.h and their dependencies) from the host.
+    INCDIR=$(realpath $(dirname $(which ${CC}))/../include)
+    echo $INCDIR
+    SRCS="float.h stddef.h stdint.h stdbool.h stdarg.h"
+    DEPS="$(mktemp)"
+    get_header_deps ${INCDIR} ${SRCS} >${DEPS} || \
+        die "Failure getting dependencies of host headers"
+    # cpio will fail if HOST_INCDIR is below a symlink, so squash that
+    mkdir -p ${HOST_INCDIR}
+    HOST_INCDIR="$(readlink -f ${HOST_INCDIR})"
+    (cd ${INCDIR} && cpio --quiet -Lpdm ${HOST_INCDIR} <${DEPS}) || \
+        die "Failure copying host headers"
+    rm ${DEPS}
+
+    MAKECONF_CFLAGS="-nostdinc"
+    MAKECONF_CFLAGS="${MAKECONF_CFLAGS} -mstack-protector-guard=global"
+    MAKECONF_SPT_CFLAGS=
+    MAKECONF_SPT_LDLIBS="-lseccomp"
+
+    [ -n "${OPT_ONLY_TOOLS}" ] && return
+    CONFIG_HVT=1
+    CONFIG_SPT=1
+    if ! gcc_check_header seccomp.h; then
+        die "Could not compile with seccomp.h"
+    fi
+    if ! gcc_check_lib -lseccomp; then
+        die "Could not link with -lseccomp"
+    fi
+    [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_VIRTIO=1
+    [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_MUEN=1
+    [ "${CONFIG_ARCH}" = "ppc64le" ] && CONFIG_HVT=
+    CONFIG_GENODE=
+    [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_XEN=1
+}
+
 config_host_freebsd()
 {
     cc_is_clang || die "Only 'clang' is supported on FreeBSD"
@@ -270,6 +314,7 @@ fi
 # Allow external override of CC.
 CC=${CC:-cc}
 LD=${LD:-ld}
+AR=${AR:-ar}
 
 CC_MACHINE=$(${CC} -dumpmachine)
 [ $? -ne 0 ] &&
@@ -280,12 +325,24 @@ case ${CC_MACHINE} in
         CONFIG_ARCH=x86_64 CONFIG_HOST=Linux
         CONFIG_GUEST_PAGE_SIZE=0x1000
         ;;
+    llir_x86_64-*linux*)
+        CONFIG_ARCH=x86_64 CONFIG_HOST=Linux CONFIG_LLIR=1
+        CONFIG_GUEST_PAGE_SIZE=0x1000
+        ;;
     aarch64-*linux*)
         CONFIG_ARCH=aarch64 CONFIG_HOST=Linux
         CONFIG_GUEST_PAGE_SIZE=0x1000
         ;;
+    llir_aarch64-*linux*)
+        CONFIG_ARCH=aarch64 CONFIG_HOST=Linux CONFIG_LLIR=1
+        CONFIG_GUEST_PAGE_SIZE=0x1000
+        ;;
     powerpc64le-*linux*|ppc64le-*linux*)
         CONFIG_ARCH=ppc64le CONFIG_HOST=Linux
+        CONFIG_GUEST_PAGE_SIZE=0x10000
+        ;;
+    llir_powerpc64le-*linux*)
+        CONFIG_ARCH=ppc64le CONFIG_HOST=Linux CONFIG_LLIR=1
         CONFIG_GUEST_PAGE_SIZE=0x10000
         ;;
     x86_64-*freebsd*)
@@ -321,7 +378,11 @@ CONFIG_HVT_FREEBSD_ENABLE_CAPSICUM=
 
 case "${CONFIG_HOST}" in
     Linux)
-        config_host_linux
+        if [ -n "$CONFIG_LLIR" ]; then
+            config_host_llir
+        else
+            config_host_linux
+        fi
         ;;
     FreeBSD)
         config_host_freebsd
@@ -341,7 +402,7 @@ esac
 # GNU make. Given the differences in quoting rules between the two
 # (unable to sensibly use VAR="VALUE"), our convention is as follows:
 #
-# 1. GNU make parses the entire file, i.e. all variables defined below are 
+# 1. GNU make parses the entire file, i.e. all variables defined below are
 #    available to Makefiles.
 #
 # 2. Shell scripts parse the subset of *lines* starting with "CONFIG_". I.e.
@@ -366,6 +427,7 @@ CONFIG_HOST=${CONFIG_HOST}
 CONFIG_GUEST_PAGE_SIZE=${CONFIG_GUEST_PAGE_SIZE}
 MAKECONF_CC=${CC}
 MAKECONF_LD=${LD}
+MAKECONF_AR=${AR}
 MAKECONF_SPT_CFLAGS=${MAKECONF_SPT_CFLAGS}
 MAKECONF_SPT_LDLIBS=${MAKECONF_SPT_LDLIBS}
 CONFIG_SPT_NO_PIE=${CONFIG_SPT_NO_PIE}

@@ -18,6 +18,16 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef __llir__
+
+    .section .text
+    .globl _newstack
+_newstack:
+    trap
+    .end
+
+#else
+
 #include "../cpu_x86_64.h"
 #include "xen/elfnote.h"
 #include "../virtio/multiboot.h"
@@ -231,3 +241,5 @@ mxcsr_ptr:
  */
 .space 4096
 bootstack:
+
+#endif

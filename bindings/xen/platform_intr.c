@@ -50,8 +50,11 @@ static inline void mmio_writel(uint32_t *addr, uint32_t val)
 
 static inline uint64_t rdmsrq(uint32_t base)
 {
+#ifdef __llir__
+    (void) base;
+    __builtin_trap();
+#else
     uint32_t low, high;
-
     __asm__ __volatile__(
             "rdmsr" :
             "=a" (low),
@@ -59,16 +62,22 @@ static inline uint64_t rdmsrq(uint32_t base)
             "c" (base)
     );
     return ((uint64_t)high << 32) | low;
+#endif
 }
 
 static inline void wrmsrq(uint32_t base, uint64_t val)
 {
+#ifdef __llir__
+    (void) base;
+    (void) val;
+#else
     __asm__ __volatile__(
             "wrmsr" ::
             "c" (base),
             "a" ((uint32_t)val),
             "d" ((uint32_t)(val >> 32))
     );
+#endif
 }
 
 static int spurious_vector_handler(void *arg __attribute__((unused)))

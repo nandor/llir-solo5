@@ -34,12 +34,21 @@ int solo5_app_main(const struct solo5_start_info *si __attribute__((unused)))
      * Try to call SYS_dup(1), which is not in any seccomp policy we use.
      */
 #if defined(__x86_64__)
-    int ret;
+    #if defined(__llir__)
+        int ret;
 
-    __asm__ __volatile__ (
-            "syscall"
-            : "=a" (ret) : "a" (32), "D" (1) : "rcx", "r11", "memory"
-    );
+        __asm__ __volatile__ (
+                "syscall.i64 %0, %1, %2"
+                : "=r" (ret) : "r" (32), "r" (1) : "memory"
+        );
+    #else
+        int ret;
+
+        __asm__ __volatile__ (
+                "syscall"
+                : "=a" (ret) : "a" (32), "D" (1) : "rcx", "r11", "memory"
+        );
+    #endif
 #elif defined(__aarch64__)
     register long x8 __asm__("x8") = 23;
     register long x0 __asm__("x0");
