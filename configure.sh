@@ -202,6 +202,15 @@ config_host_llir()
         die "Failure copying host headers"
     rm ${DEPS}
 
+    # If the host toolchain is NOT configured to build PIE exectuables by
+    # default, assume it has no support for that and apply a workaround by
+    # locating the spt tender starting at a virtual address of 1 GB.
+    if ! cc_has_pie; then
+        warn "Host toolchain does not build PIE executables, spt guest size will be limited to 1GB"
+        warn "Consider upgrading to a Linux distribution with PIE support"
+        CONFIG_SPT_NO_PIE=1
+    fi
+
     MAKECONF_CFLAGS="-nostdinc"
     MAKECONF_CFLAGS="${MAKECONF_CFLAGS} -mstack-protector-guard=global"
     MAKECONF_SPT_CFLAGS=
