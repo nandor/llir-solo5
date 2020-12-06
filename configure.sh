@@ -115,12 +115,27 @@ get_header_deps()
 
 config_host_linux()
 {
-    # On Linux/gcc we use -nostdinc and copy all the gcc-provided headers.
-    cc_is_gcc || die "Only 'gcc' 4.x+ is supported on Linux"
-    CC_INCDIR=$(${CC} -print-file-name=include)
-    [ -d "${CC_INCDIR}" ] || die "Cannot determine gcc include directory"
-    mkdir -p ${HOST_INCDIR}
-    cp -R ${CC_INCDIR}/. ${HOST_INCDIR}
+    if cc_is_clang; then
+        INCDIR=$(realpath $(dirname $(which ${CC}))/../include)
+        echo $INCDIR
+        SRCS="float.h stddef.h stdint.h stdbool.h stdarg.h"
+        DEPS="$(mktemp)"
+        get_header_deps ${INCDIR} ${SRCS} >${DEPS} || \
+            die "Failure getting dependencies of host headers"
+        # cpio will fail if HOST_INCDIR is below a symlink, so squash that
+        mkdir -p ${HOST_INCDIR}
+        HOST_INCDIR="$(readlink -f ${HOST_INCDIR})"
+        (cd ${INCDIR} && cpio --quiet -Lpdm ${HOST_INCDIR} <${DEPS}) || \
+            die "Failure copying host headers"
+        rm ${DEPS}
+    else
+        # On Linux/gcc we use -nostdinc and copy all the gcc-provided headers.
+        cc_is_gcc || die "Only 'gcc' 4.x+ is supported on Linux"
+        CC_INCDIR=$(${CC} -print-file-name=include)
+        [ -d "${CC_INCDIR}" ] || die "Cannot determine gcc include directory"
+        mkdir -p ${HOST_INCDIR}
+        cp -R ${CC_INCDIR}/. ${HOST_INCDIR}
+    fi
 
     MAKECONF_CFLAGS="-nostdinc"
     # Recent distributions now default to PIE enabled. Disable it explicitly
@@ -175,54 +190,6 @@ config_host_linux()
         die "Could not compile with seccomp.h"
     fi
     if ! PKG_LIBS=${MAKECONF_SPT_LIBS} gcc_check_lib -lseccomp; then
-        die "Could not link with -lseccomp"
-    fi
-    [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_VIRTIO=1
-    [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_MUEN=1
-    [ "${CONFIG_ARCH}" = "ppc64le" ] && CONFIG_HVT=
-    CONFIG_GENODE=
-    [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_XEN=1
-}
-
-config_host_llir()
-{
-    # On FreeBSD/clang we use -nostdlibinc which gives us access to the
-    # clang-provided headers for compiler instrinsics. We copy the rest
-    # (std*.h, float.h and their dependencies) from the host.
-    INCDIR=$(realpath $(dirname $(which ${CC}))/../include)
-    echo $INCDIR
-    SRCS="float.h stddef.h stdint.h stdbool.h stdarg.h"
-    DEPS="$(mktemp)"
-    get_header_deps ${INCDIR} ${SRCS} >${DEPS} || \
-        die "Failure getting dependencies of host headers"
-    # cpio will fail if HOST_INCDIR is below a symlink, so squash that
-    mkdir -p ${HOST_INCDIR}
-    HOST_INCDIR="$(readlink -f ${HOST_INCDIR})"
-    (cd ${INCDIR} && cpio --quiet -Lpdm ${HOST_INCDIR} <${DEPS}) || \
-        die "Failure copying host headers"
-    rm ${DEPS}
-
-    # If the host toolchain is NOT configured to build PIE exectuables by
-    # default, assume it has no support for that and apply a workaround by
-    # locating the spt tender starting at a virtual address of 1 GB.
-    if ! cc_has_pie; then
-        warn "Host toolchain does not build PIE executables, spt guest size will be limited to 1GB"
-        warn "Consider upgrading to a Linux distribution with PIE support"
-        CONFIG_SPT_NO_PIE=1
-    fi
-
-    MAKECONF_CFLAGS="-nostdinc"
-    MAKECONF_CFLAGS="${MAKECONF_CFLAGS} -mstack-protector-guard=global"
-    MAKECONF_SPT_CFLAGS=
-    MAKECONF_SPT_LDLIBS="-lseccomp"
-
-    [ -n "${OPT_ONLY_TOOLS}" ] && return
-    CONFIG_HVT=1
-    CONFIG_SPT=1
-    if ! gcc_check_header seccomp.h; then
-        die "Could not compile with seccomp.h"
-    fi
-    if ! gcc_check_lib -lseccomp; then
         die "Could not link with -lseccomp"
     fi
     [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_VIRTIO=1
@@ -330,28 +297,16 @@ CC_MACHINE=$(${CC} -dumpmachine)
     die "Could not run '${CC} -dumpmachine', is your compiler working?"
 # Determine HOST and ARCH based on what the toolchain reports.
 case ${CC_MACHINE} in
-    x86_64-*linux*)
+    x86_64-*linux*|llir_x86_64-*linux*)
         CONFIG_ARCH=x86_64 CONFIG_HOST=Linux
         CONFIG_GUEST_PAGE_SIZE=0x1000
         ;;
-    llir_x86_64-*linux*)
-        CONFIG_ARCH=x86_64 CONFIG_HOST=Linux CONFIG_LLIR=1
-        CONFIG_GUEST_PAGE_SIZE=0x1000
-        ;;
-    aarch64-*linux*)
+    aarch64-*linux*|llir_aarch64-*linux*)
         CONFIG_ARCH=aarch64 CONFIG_HOST=Linux
         CONFIG_GUEST_PAGE_SIZE=0x1000
         ;;
-    llir_aarch64-*linux*)
-        CONFIG_ARCH=aarch64 CONFIG_HOST=Linux CONFIG_LLIR=1
-        CONFIG_GUEST_PAGE_SIZE=0x1000
-        ;;
-    powerpc64le-*linux*|ppc64le-*linux*)
+    powerpc64le-*linux*|ppc64le-*linux*|llir_powerpc64le-*linux*)
         CONFIG_ARCH=ppc64le CONFIG_HOST=Linux
-        CONFIG_GUEST_PAGE_SIZE=0x10000
-        ;;
-    llir_powerpc64le-*linux*)
-        CONFIG_ARCH=ppc64le CONFIG_HOST=Linux CONFIG_LLIR=1
         CONFIG_GUEST_PAGE_SIZE=0x10000
         ;;
     x86_64-*freebsd*)
@@ -387,11 +342,7 @@ CONFIG_HVT_FREEBSD_ENABLE_CAPSICUM=
 
 case "${CONFIG_HOST}" in
     Linux)
-        if [ -n "$CONFIG_LLIR" ]; then
-            config_host_llir
-        else
-            config_host_linux
-        fi
+        config_host_linux
         ;;
     FreeBSD)
         config_host_freebsd
