@@ -204,9 +204,7 @@ static inline uint64_t mul64_32(uint64_t a, uint32_t b, uint8_t s)
 static inline void outb(uint16_t port, uint8_t v)
 {
 #ifdef __llir__
-    (void) port;
-    (void) v;
-    __builtin_trap();
+    __asm__ __volatile__("x86_out %1, %0" : : "r"(v), "r"(port));
 #else
     __asm__ __volatile__("outb %0,%1" : : "a" (v), "dN" (port));
 #endif
@@ -214,9 +212,7 @@ static inline void outb(uint16_t port, uint8_t v)
 static inline void outw(uint16_t port, uint16_t v)
 {
 #ifdef __llir__
-    (void) port;
-    (void) v;
-    __builtin_trap();
+    __asm__ __volatile__("x86_out %1, %0" : : "r"(v), "r"(port));
 #else
     __asm__ __volatile__("outw %0,%1" : : "a" (v), "dN" (port));
 #endif
@@ -224,71 +220,63 @@ static inline void outw(uint16_t port, uint16_t v)
 static inline void outl(uint16_t port, uint32_t v)
 {
 #ifdef __llir__
-    (void) port;
-    (void) v;
-    __builtin_trap();
+    __asm__ __volatile__("x86_out %1, %0" : : "r"(v), "r"(port));
 #else
     __asm__ __volatile__("outl %0,%1" : : "a" (v), "dN" (port));
 #endif
 }
 static inline uint8_t inb(uint16_t port)
 {
-#ifdef __llir__
-    (void) port;
-    __builtin_trap();
-#else
     uint8_t v;
-
+#ifdef __llir__
+    __asm__ __volatile__("x86_in.i8 %0, %1" : "=r"(v) : "r"(port));
+#else
     __asm__ __volatile__("inb %1,%0" : "=a" (v) : "dN" (port));
-    return v;
 #endif
+    return v;
 }
 static inline uint16_t inw(uint16_t port)
 {
-#ifdef __llir__
-    (void) port;
-    __builtin_trap();
-#else
     uint16_t v;
-
+#ifdef __llir__
+    __asm__ __volatile__("x86_in.i16 %0, %1" : "=r"(v) : "r"(port));
+#else
     __asm__ __volatile__("inw %1,%0" : "=a" (v) : "dN" (port));
-    return v;
 #endif
+    return v;
 }
 static inline uint32_t inl(uint16_t port)
 {
-#ifdef __llir__
-    (void) port;
-    __builtin_trap();
-#else
     uint32_t v;
-
+#ifdef __llir__
+    __asm__ __volatile__("x86_in.i32 %0, %1" : "=r"(v) : "r"(port));
+#else
     __asm__ __volatile__("inl %1,%0" : "=a" (v) : "dN" (port));
-    return v;
 #endif
+    return v;
 }
 
 static inline uint64_t inq(uint16_t port_lo)
 {
-#ifdef __llir__
-    (void) port_lo;
-    __builtin_trap();
-#else
     uint16_t port_hi = port_lo + 4;
     uint32_t lo, hi;
-
+#ifdef __llir__
+    __asm__ __volatile__("x86_in.i32 %0, %1" : "=r"(lo) : "r"(port_lo));
+    __asm__ __volatile__("x86_in.i32 %0, %1" : "=r"(hi) : "r"(port_hi));
+#else
     __asm__ __volatile__("inl %1,%0" : "=a" (lo) : "dN" (port_lo));
     __asm__ __volatile__("inl %1,%0" : "=a" (hi) : "dN" (port_hi));
-
-    return ((uint64_t)lo) | ((uint64_t)hi << 32);
 #endif
+    return ((uint64_t)lo) | ((uint64_t)hi << 32);
 }
 
 static inline void cpu_set_tls_base(uint64_t base)
 {
 #ifdef __llir__
-    (void) base;
-    __builtin_trap();
+    __asm__ __volatile("x86_wr_msr %0, %1, %2" ::
+        "r"(0xc0000100),
+        "r"((uint32_t)base),
+        "r"((uint32_t)(base >> 32)));
 #else
      __asm__ __volatile("wrmsr" ::
          "c" (0xc0000100), /* IA32_FS_BASE */
@@ -302,26 +290,24 @@ static inline void
 x86_cpuid(uint32_t level, uint32_t *eax_out, uint32_t *ebx_out,
         uint32_t *ecx_out, uint32_t *edx_out)
 {
-#ifdef __llir__
-    (void) level;
-    (void) eax_out;
-    (void) ebx_out;
-    (void) ecx_out;
-    (void) edx_out;
-    __builtin_trap();
-#else
     uint32_t eax_, ebx_, ecx_, edx_;
-
+#ifdef __llir__
+    __asm__(
+        "x86_cpuid.i32.i32.i32.i32 %0, %1, %2, %3, %4"
+        : "=r"(eax_), "=r"(ebx_), "=r"(ecx_), "=r"(edx_)
+        : "r"(level)
+    );
+#else
     __asm__(
         "cpuid"
         : "=a" (eax_), "=b" (ebx_), "=c" (ecx_), "=d" (edx_)
         : "0" (level)
     );
+#endif
     *eax_out = eax_;
     *ebx_out = ebx_;
     *ecx_out = ecx_;
     *edx_out = edx_;
-#endif
 }
 
 #endif /* !ASM_FILE */

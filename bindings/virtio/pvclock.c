@@ -84,7 +84,7 @@ uint64_t pvclock_monotonic(void) {
     do {
         version = pvclock_ti.version;
 #ifdef __llir__
-        __builtin_trap();
+        __asm__ ("x86_mfence" ::: "memory");
 #else
         __asm__ ("mfence" ::: "memory");
 #endif
@@ -96,7 +96,7 @@ uint64_t pvclock_monotonic(void) {
         time_now = mul64_32(delta, pvclock_ti.tsc_to_system_mul, 32) +
             pvclock_ti.system_time;
 #ifdef __llir__
-        __builtin_trap();
+        __asm__ ("x86_mfence" ::: "memory");
 #else
         __asm__ ("mfence" ::: "memory");
 #endif
@@ -116,14 +116,14 @@ static uint64_t pvclock_read_wall_clock(void)
 	do {
 		version = pvclock_wc.version;
 #ifdef __llir__
-        __builtin_trap();
+        __asm__ ("x86_mfence" ::: "memory");
 #else
         __asm__ ("mfence" ::: "memory");
 #endif
 		wc_boot = pvclock_wc.sec * NSEC_PER_SEC;
 		wc_boot += pvclock_wc.nsec;
 #ifdef __llir__
-        __builtin_trap();
+        __asm__ ("x86_mfence" ::: "memory");
 #else
         __asm__ ("mfence" ::: "memory");
 #endif
@@ -156,7 +156,16 @@ int pvclock_init(void) {
     log(INFO, "Solo5: Clock source: KVM paravirtualized clock\n");
 
 #ifdef __llir__
-        __builtin_trap();
+    __asm__ __volatile("x86_wr_msr %0, %1, %2" ::
+        "r" (msr_kvm_system_time),
+        "r" ((uint32_t)((uintptr_t)&pvclock_ti | 0x1)),
+        "r" ((uint32_t)((uintptr_t)&pvclock_ti >> 32))
+    );
+    __asm__ __volatile("x86_wr_msr %0, %1, %2" ::
+        "r" (msr_kvm_wall_clock),
+        "r" ((uint32_t)((uintptr_t)&pvclock_wc)),
+        "r" ((uint32_t)((uintptr_t)&pvclock_wc >> 32))
+    );
 #else
     __asm__ __volatile("wrmsr" ::
         "c" (msr_kvm_system_time),
