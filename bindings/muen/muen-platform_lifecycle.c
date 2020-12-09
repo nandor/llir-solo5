@@ -48,7 +48,7 @@ void platform_exit(int status __attribute__((unused)),
     const char msg[] = "Solo5: Halted\n";
     platform_puts(msg, strlen(msg));
 #ifdef __llir__
-    __builtin_trap();
+    __asm__ __volatile__("x86_cli\nx86_hlt");
 #else
     __asm__ __volatile__("cli; hlt");
 #endif

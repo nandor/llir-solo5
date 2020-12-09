@@ -32,9 +32,6 @@ static uint64_t cpu_gdt64[GDT_NUM_ENTRIES] ALIGN_64_BIT;
  */
 static void gdt_init(void)
 {
-#ifdef __llir__
-    __builtin_trap();
-#else
     memset(cpu_gdt64, 0, sizeof(cpu_gdt64));
     cpu_gdt64[GDT_DESC_CODE] = GDT_DESC_CODE_VAL;
     cpu_gdt64[GDT_DESC_DATA] = GDT_DESC_DATA_VAL;
@@ -42,6 +39,17 @@ static void gdt_init(void)
     volatile struct gdtptr gdtptr;
     gdtptr.limit = sizeof(cpu_gdt64) - 1;
     gdtptr.base = (uint64_t)&cpu_gdt64;
+#ifdef __llir__
+    __asm__ __volatile__(
+            "x86_lgdt %0\n"
+            "x86_set_cs %1\n"
+            "x86_set_ds %1\n"
+            :
+            : "r" (&gdtptr),
+              "r" (GDT_DESC_OFFSET(GDT_DESC_CODE)),
+              "r" (GDT_DESC_OFFSET(GDT_DESC_DATA))
+            : );
+#else
     __asm__ __volatile__(
             "lgdt (%0);\n"
             "pushq %1;\n"
@@ -132,7 +140,7 @@ static void idt_init(void)
     idtptr.limit = sizeof(cpu_idt) - 1;
     idtptr.base = (uint64_t) &cpu_idt;
 #ifdef __llir__
-    __builtin_trap();
+    __asm__ __volatile__("x86_lidt %0" :: "r" (&idtptr));
 #else
     __asm__ __volatile__("lidt (%0)" :: "r" (&idtptr));
 #endif
@@ -163,7 +171,11 @@ static void tss_init(void)
     td->zero = 0;
 
     cc_barrier();
+#ifdef __llir__
+    __asm__ __volatile__("x86_ltr %0" :: "r" ((unsigned short)(GDT_DESC_TSS_LO * 8)));
+#else
     __asm__ __volatile__("ltr %0" :: "r" ((unsigned short)(GDT_DESC_TSS_LO * 8)));
+#endif
 }
 
 void cpu_init(void)
@@ -195,7 +207,7 @@ int cpu_intr_depth = 1;
 void cpu_intr_disable(void)
 {
 #ifdef __llir__
-    __builtin_trap();
+    __asm__ __volatile__("x86_cli");
 #else
     __asm__ __volatile__("cli");
 #endif
@@ -205,7 +217,10 @@ void cpu_intr_disable(void)
 void cpu_intr_enable(void)
 {
 #ifdef __llir__
-    __builtin_trap();
+    assert(cpu_intr_depth > 0);
+
+    if (--cpu_intr_depth == 0)
+        __asm__ __volatile__("x86_sti");
 #else
     assert(cpu_intr_depth > 0);
 
@@ -217,6 +232,7 @@ void cpu_intr_enable(void)
 void cpu_halt(void)
 {
 #ifdef __llir__
+    __asm__ __volatile__("x86_cli\nx86_hlt");
     __builtin_trap();
 #else
     __asm__ __volatile__("cli; hlt");

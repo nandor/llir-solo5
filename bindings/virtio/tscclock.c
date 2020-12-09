@@ -290,7 +290,7 @@ void cpu_block(uint64_t until) {
          * else than spin.
          */
 #ifdef __llir__
-     __builtin_trap();
+        __asm__ __volatile__("x86_spin");
 #else
         __asm__ __volatile__(
             "sti;\n"
@@ -328,7 +328,10 @@ void cpu_block(uint64_t until) {
      d = cpu_intr_depth;
      cpu_intr_depth = 0;
 #ifdef __llir__
-     __builtin_trap();
+     __asm__ __volatile__(
+         "x86_sti\n"
+         "x86_hlt\n"
+         "x86_cli\n");
 #else
      __asm__ __volatile__(
          "sti;\n"

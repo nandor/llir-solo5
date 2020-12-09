@@ -189,7 +189,11 @@ static void pagetable_init(void)
      * Switch to new page tables.
      */
 #ifdef __llir__
-    __builtin_trap();
+    __asm__ __volatile__(
+            "set $x86_cr3, %0"
+            : : "r"(l4e_addr)
+            : "memory"
+    );
 #else
     __asm__ __volatile__(
             "mov %0, %%cr3"
@@ -216,17 +220,21 @@ static void hypercall_init(void)
         }
     }
     assert(found);
-#ifdef __llir__
-    __builtin_trap();
-#else
     x86_cpuid(base + 2, &eax, &ebx, &ecx, &edx);
+#ifdef __llir__
+    __asm__ __volatile("x86_wrmsr %0, %1, %2" ::
+        "r" (base),
+        "r" ((uint32_t)((uintptr_t)&HYPERCALL_PAGE)),
+        "r" ((uint32_t)((uintptr_t)&HYPERCALL_PAGE >> 32))
+    );
+#else
     __asm__ __volatile("wrmsr" ::
         "c" (base),
         "a" ((uint32_t)((uintptr_t)&HYPERCALL_PAGE)),
         "d" ((uint32_t)((uintptr_t)&HYPERCALL_PAGE >> 32))
     );
-    cc_barrier();
 #endif
+    cc_barrier();
 
     /*
      * Confirm that the RET poison we initialise the hypercall page with

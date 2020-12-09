@@ -35,7 +35,7 @@ void solo5_yield(solo5_time_t deadline, solo5_handle_set_t *ready_set)
             break;
 
 #ifdef __llir__
-    __builtin_trap();
+        __asm__ __volatile__("x86_pause");
 #else
         __asm__ __volatile__("pause");
 #endif

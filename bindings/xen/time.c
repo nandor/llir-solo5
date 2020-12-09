@@ -65,7 +65,16 @@ void solo5_yield(solo5_time_t deadline, solo5_handle_set_t *ready_set)
          * event has not fired immediately before going into halt state.
          */
 #ifdef __llir__
-        __builtin_trap();
+        while(true) {
+            __asm__ __volatile__ ("x86_cli" : : : "memory");
+            if (timer_fired) {
+                __asm__ __volatile__ ("x86_sti");
+                break;
+            }
+            else {
+                __asm__ __volatile__ ("x86_sti\nx86_hlt");
+            }
+        }
 #else
         while(true) {
             __asm__ __volatile__ ("cli" : : : "memory");
