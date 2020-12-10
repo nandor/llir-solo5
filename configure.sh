@@ -138,23 +138,7 @@ config_host_linux()
     fi
 
     MAKECONF_CFLAGS="-nostdinc"
-    # Recent distributions now default to PIE enabled. Disable it explicitly
-    # if that's the case here.
-    # XXX: This breaks MirageOS in (at least) the build of mirage-solo5 due
-    # to -fno-pie breaking the build of lib/dllmirage-solo5_bindings.so.
-    # Keep this disabled until that is resolved.
-    # cc_has_pie && MAKECONF_CFLAGS="${MAKECONF_CFLAGS} -fno-pie"
-
-    # Stack smashing protection:
-    #
-    # Any GCC configured for a Linux/x86_64 target (actually, any
-    # glibc-based target) will use a TLS slot to address __stack_chk_guard.
-    # Disable this behaviour and use an ordinary global variable instead.
-    if [ "${CONFIG_ARCH}" = "x86_64" ] || [ "${CONFIG_ARCH}" = "ppc64le" ]; then
-        gcc_check_option -mstack-protector-guard=global || \
-            die "GCC 4.9.0 or newer is required for -mstack-protector-guard= support"
-        MAKECONF_CFLAGS="${MAKECONF_CFLAGS} -mstack-protector-guard=global"
-    fi
+    MAKECONF_CFLAGS="${MAKECONF_CFLAGS} -fno-stack-protector"
 
     # If the host toolchain is NOT configured to build PIE exectuables by
     # default, assume it has no support for that and apply a workaround by
