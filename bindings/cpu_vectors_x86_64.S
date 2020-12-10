@@ -20,6 +20,61 @@
 
 #ifdef __llir__
 
+#define TRAP_ENTRY(trapno, has_ec) \
+.section .text;                    \
+cpu_trap_##trapno:;                \
+    .visibility global_default;    \
+    .call intr;                    \
+    trap;                          \
+    .end
+
+#define IRQ_ENTRY(irqno)           \
+.section .text;                    \
+cpu_irq_##irqno:;                  \
+    .visibility global_default;    \
+    mov.i64 $0, intr_irq_handler;  \
+    mov.i64 $1, irqno;             \
+    call.c  $0, $1;                \
+    ret;                           \
+    .end
+
+TRAP_ENTRY(0,  0) #DE
+TRAP_ENTRY(1,  0) #DB
+TRAP_ENTRY(2,  0) #NMI
+TRAP_ENTRY(3,  0) #BP
+TRAP_ENTRY(4,  0) #OF
+TRAP_ENTRY(5,  0) #BR
+TRAP_ENTRY(6,  0) #UD
+TRAP_ENTRY(7,  0) #NM
+TRAP_ENTRY(8,  1) #DF
+TRAP_ENTRY(10, 1) #TS
+TRAP_ENTRY(11, 1) #NP
+TRAP_ENTRY(12, 1) #SS
+TRAP_ENTRY(13, 1) #GP
+TRAP_ENTRY(14, 1) #PF
+TRAP_ENTRY(16, 0) #MF
+TRAP_ENTRY(17, 1) #AC
+TRAP_ENTRY(18, 0) #MC
+TRAP_ENTRY(19, 0) #XM
+TRAP_ENTRY(20, 0) #VE
+
+IRQ_ENTRY(0)
+IRQ_ENTRY(1)
+IRQ_ENTRY(2)
+IRQ_ENTRY(3)
+IRQ_ENTRY(4)
+IRQ_ENTRY(5)
+IRQ_ENTRY(6)
+IRQ_ENTRY(7)
+IRQ_ENTRY(8)
+IRQ_ENTRY(9)
+IRQ_ENTRY(10)
+IRQ_ENTRY(11)
+IRQ_ENTRY(12)
+IRQ_ENTRY(13)
+IRQ_ENTRY(14)
+IRQ_ENTRY(15)
+
 #else
 
 .macro PUSH_CALLER_SAVE
