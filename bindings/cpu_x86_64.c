@@ -43,7 +43,7 @@ static void gdt_init(void)
     __asm__ __volatile__(
             "x86_lgdt %0\n"
             "x86_set_cs %1\n"
-            "x86_set_ds %1\n"
+            "x86_set_ds %2\n"
             :
             : "r" (&gdtptr),
               "r" (GDT_DESC_OFFSET(GDT_DESC_CODE)),
