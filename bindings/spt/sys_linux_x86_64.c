@@ -45,7 +45,7 @@ long sys_read(long fd, void *buf, long size)
     long ret;
 #ifdef __llir__
     __asm__ __volatile__ (
-            "syscall.i64 %0, %1, %2, $3, %4"
+            "syscall.i64 %0, %1, %2, %3, %4"
             : "=r" (ret)
             : "r" (SYS_read), "r" (fd), "r" (buf), "r" (size)
             : "memory"
