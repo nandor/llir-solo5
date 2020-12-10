@@ -137,6 +137,9 @@ config_host_linux()
         cp -R ${CC_INCDIR}/. ${HOST_INCDIR}
     fi
 
+    if cc_is_llir; then
+        MAKECONF_LDFLAGS="$(${CC} -print-libgcc-file-name)"
+    fi
     MAKECONF_CFLAGS="-nostdinc"
     MAKECONF_CFLAGS="${MAKECONF_CFLAGS} -fno-stack-protector"
 
