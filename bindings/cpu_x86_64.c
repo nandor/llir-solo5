@@ -233,9 +233,8 @@ void cpu_halt(void)
 {
 #ifdef __llir__
     __asm__ __volatile__("x86_cli\nx86_hlt");
-    __builtin_trap();
 #else
     __asm__ __volatile__("cli; hlt");
-    for(;;);
 #endif
+    for(;;);
 }

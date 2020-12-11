@@ -135,7 +135,7 @@ void sys_exit_group(long status)
             : "r" (SYS_exit_group), "r" (status)
             : "memory"
     );
-    __builtin_trap();
+    for(;;);
 #else
     __asm__ __volatile__ (
             "syscall"
