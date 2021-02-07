@@ -83,7 +83,7 @@ uint64_t pvclock_monotonic(void)
     do {
         version = pvclock_ti->version;
 #ifdef __llir__
-        __asm__ ("x86_mfence" ::: "memory");
+        __asm__ ("x86_m_fence" ::: "memory");
 #else
         __asm__ ("mfence" ::: "memory");
 #endif
@@ -95,7 +95,7 @@ uint64_t pvclock_monotonic(void)
         time_now = mul64_32(delta, pvclock_ti->tsc_to_system_mul, 32) +
             pvclock_ti->system_time;
 #ifdef __llir__
-        __asm__ ("x86_mfence" ::: "memory");
+        __asm__ ("x86_m_fence" ::: "memory");
 #else
         __asm__ ("mfence" ::: "memory");
 #endif
@@ -115,14 +115,14 @@ static uint64_t pvclock_read_wall_clock(void)
     do {
         version = pvclock_wc->version;
 #ifdef __llir__
-        __asm__ ("x86_mfence" ::: "memory");
+        __asm__ ("x86_m_fence" ::: "memory");
 #else
         __asm__ ("mfence" ::: "memory");
 #endif
         wc_boot = pvclock_wc->sec * NSEC_PER_SEC;
         wc_boot += pvclock_wc->nsec;
 #ifdef __llir__
-        __asm__ ("x86_mfence" ::: "memory");
+        __asm__ ("x86_m_fence" ::: "memory");
 #else
         __asm__ ("mfence" ::: "memory");
 #endif
