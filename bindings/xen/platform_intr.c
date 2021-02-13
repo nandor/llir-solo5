@@ -72,7 +72,7 @@ static inline void wrmsrq(uint32_t base, uint64_t val)
 {
 #ifdef __llir__
     __asm__ __volatile__(
-            "x86_wrmsr %0, %1, %2" ::
+            "x86_wr_msr %0, %1, %2" ::
             "r" (base),
             "r" ((uint32_t)val),
             "r" ((uint32_t)(val >> 32))

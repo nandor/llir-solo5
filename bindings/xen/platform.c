@@ -222,7 +222,7 @@ static void hypercall_init(void)
     assert(found);
     x86_cpuid(base + 2, &eax, &ebx, &ecx, &edx);
 #ifdef __llir__
-    __asm__ __volatile("x86_wrmsr %0, %1, %2" ::
+    __asm__ __volatile("x86_wr_msr %0, %1, %2" ::
         "r" (base),
         "r" ((uint32_t)((uintptr_t)&HYPERCALL_PAGE)),
         "r" ((uint32_t)((uintptr_t)&HYPERCALL_PAGE >> 32))
