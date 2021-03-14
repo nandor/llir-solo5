@@ -36,6 +36,7 @@ CPPFLAGS := -isystem $(TOPDIR)/include/crt -I$(TOPDIR)/include/solo5
 LD := $(MAKECONF_LD)
 LDFLAGS := -nostdlib -z max-page-size=$(CONFIG_GUEST_PAGE_SIZE) -static \
     $(MAKECONF_LDFLAGS)
+LDPOSTFLAGS := $(MAKECONF_LDPOSTFLAGS)
 OBJCOPY ?= objcopy
 
 # Genode application compiling and linking is a special case
@@ -94,6 +95,7 @@ endef
 PC_CFLAGS := -ffreestanding -fstack-protector-strong $(MAKECONF_CFLAGS)
 PC_LD := $(MAKECONF_LD)
 PC_LDFLAGS := $(LDFLAGS)
+PC_LDPOSTFLAGS := $(LDPOSTFLAGS)
 
 # Genode application compiling and linking is a special case
 PC_GENODE_CFLAGS := -ffreestanding -fstack-protector-strong -fPIC $(MAKECONF_CFLAGS)
@@ -105,6 +107,7 @@ PC_GENODE_LDFLAGS := $(GENODE_APP_LDFLAGS)
 	    -e 's#!PC_CFLAGS!#$(PC_CFLAGS)#g;' \
 	    -e 's#!PC_LD!#$(PC_LD)#g;' \
 	    -e 's#!PC_LDFLAGS!#$(PC_LDFLAGS)#g;' \
+	    -e 's#!PC_LDPOSTFLAGS!#$(PC_LDPOSTFLAGS)#g;' \
 	    -e 's#!PC_GENODE_CFLAGS!#$(PC_GENODE_CFLAGS)#g;' \
 	    -e 's#!PC_GENODE_LDFLAGS!#$(PC_GENODE_LDFLAGS)#g;' \
 

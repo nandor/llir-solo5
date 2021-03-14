@@ -4,6 +4,7 @@ includedir=${prefix}/include/solo5-bindings-muen
 libdir=${exec_prefix}/lib/solo5-bindings-muen
 ld=!PC_LD!
 ldflags=!PC_LDFLAGS! -T ${libdir}/solo5_muen.lds ${libdir}/solo5_muen.o
+ldpostflags=!PC_LDPOSTFLAGS!
 
 Name: solo5-bindings-muen
 Version: 0.6.0
