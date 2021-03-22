@@ -206,9 +206,11 @@ static void aarch64_setup_preferred_target(int vmfd, int vcpufd)
 static uint64_t aarch64_get_counter_frequency(void)
 {
     uint64_t frq;
-
+#ifdef __llir__
+    __asm__ __volatile__("get.i64 %0, $aarch64_cntfrq" : "=r" (frq):: "memory");
+#else
     __asm__ __volatile__("mrs %0, cntfrq_el0" : "=r" (frq):: "memory");
-
+#endif
     return frq;
 }
 

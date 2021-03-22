@@ -18,6 +18,17 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef __llir__
+
+    .section ".data.exception"
+    .align  8
+    .globl cpu_exception_vectors
+cpu_exception_vectors:
+    .quad 0
+    .end
+
+#else
+
 /* Linkage for ARM */
 #define __ALIGN .align 2
 #define __ALIGN_STR ".align 2"
@@ -203,3 +214,5 @@ ENTRY(cpu_exception_vectors)
     EXCEPTION_ENTRY cpu_el0_fiq_invalid         // FIQ 32-bit EL0
     EXCEPTION_ENTRY cpu_el0_error_invalid       // Error 32-bit EL0
 END(cpu_exception_vectors)
+
+#endif

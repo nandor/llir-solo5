@@ -58,8 +58,11 @@
 static inline uint64_t cpu_cntvct(void)
 {
     uint64_t val;
-
+#ifdef __llir__
+    __asm__ __volatile__("get.i64 %0, $aarch64_cntvct" : "=r" (val)::);
+#else
     __asm__ __volatile__("mrs %0, cntvct_el0" : "=r" (val)::);
+#endif
     return val;
 }
 
@@ -71,7 +74,11 @@ static inline uint64_t mul64_32(uint64_t a, uint32_t b, uint8_t s)
 
 static inline void cpu_set_tls_base(uint64_t base)
 {
-    __asm__ __volatile("msr tpidr_el0, %0" :: "r"(base));
+#ifdef __llir__
+    __asm__ __volatile__("set.i64 $fs, %0" :: "r"(base));
+#else
+    __asm__ __volatile__("msr tpidr_el0, %0" :: "r"(base));
+#endif
 }
 
 #endif /* __CPU_AARCH64_H__ */

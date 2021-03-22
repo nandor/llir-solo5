@@ -37,10 +37,14 @@ int solo5_app_main(const struct solo5_start_info *si __attribute__((unused)))
     __asm__ __volatile("movq %%fs:0x28, %%rax" : : : "rax");
   #endif
 #elif defined(__aarch64__)
+  #if defined(__llir__)
+    __builtin_trap();
+  #else
     __asm__ __volatile("mrs x0, tpidr_el0; "
                        "add x0, x0, #0x10; "
                        "ldr w1, [x0]"
                        : : : "x0", "w1");
+  #endif
 #elif defined(__powerpc64__)
     __asm__ __volatile("ld 3,-28672(13)" : : : "r3", "r13");
 #else

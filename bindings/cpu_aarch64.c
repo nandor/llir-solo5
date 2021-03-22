@@ -40,10 +40,17 @@ static const char *exception_modes[]= {
 
 void cpu_init(void)
 {
+#ifdef __llir__
+    __asm__ __volatile__("set $aarch64_vbar, %0"
+            :
+            : "r" ((uint64_t)&cpu_exception_vectors)
+            : "memory");
+#else
     __asm__ __volatile__("msr VBAR_EL1, %0"
             :
             : "r" ((uint64_t)&cpu_exception_vectors)
             : "memory");
+#endif
 }
 
 static void dump_registers(struct regs *regs)
@@ -74,8 +81,11 @@ void cpu_trap_handler(struct regs *regs, int el, int mode, int is_valid)
     if (exception_cls == ESR_EC_DABT_LOW ||
         exception_cls == ESR_EC_DABT_CUR) {
             uint64_t addr;
-            __asm__ __volatile__("mrs %0, FAR_EL1"
-                                 :"=&r"(addr) ::);
+#ifdef __llir__
+            __asm__ __volatile__("get.i64 %0, $aarch64_far" :"=r"(addr) ::);
+#else
+            __asm__ __volatile__("mrs %0, FAR_EL1" :"=&r"(addr) ::);
+#endif
             log(INFO, "Data Abort Address: 0x%016lx\n", addr);
     }
 
@@ -89,7 +99,11 @@ int cpu_intr_depth = 1;
 
 void cpu_intr_disable(void)
 {
-    __asm__ __volatile__("msr daifset, #2");
+    #ifdef __llir__
+        __asm__ __volatile__("aarch64_cli");
+    #else
+        __asm__ __volatile__("msr daifset, #2");
+    #endif
     cpu_intr_depth++;
 }
 
@@ -97,8 +111,13 @@ void cpu_intr_enable(void)
 {
     assert(cpu_intr_depth > 0);
 
-    if (--cpu_intr_depth == 0)
-        __asm__ __volatile__("msr daifclr, #2");
+    if (--cpu_intr_depth == 0) {
+        #ifdef __llir__
+        __asm__ __volatile__("aarch64_sti");
+        #else
+            __asm__ __volatile__("msr daifclr, #2");
+        #endif
+    }
 }
 
 void cpu_halt(void)
@@ -106,6 +125,10 @@ void cpu_halt(void)
     /* Copied from FreeBSD:sys/arm64/arm64/machdep.c */
     cpu_intr_disable();
     while (1) {
-        __asm __volatile("wfi");
+        #ifdef __llir__
+            __asm __volatile("aarch64_wfi");
+        #else
+            __asm __volatile__("wfi");
+        #endif
     }
 }
